@@ -1,4 +1,6 @@
-﻿namespace Blazr.Demo.TypeAhead;
+﻿using System.Diagnostics;
+
+namespace Blazr.Demo.TypeAhead;
 
 public class InputThrottler
 {
@@ -10,57 +12,57 @@ public class InputThrottler
 
     private async Task RunQueueAsync()
     {
-        //Debug.WriteLine($"");
-        //Debug.WriteLine($"Running RunQueueAsync");
+        ///Debug.WriteLine($"Running RunQueueAsync");
 
         // if we have a completed task then null it
         if (_runningTaskCompletionSource is not null && _runningTaskCompletionSource.Task.IsCompleted)
             _runningTaskCompletionSource = null;
 
-        // if we have a running task then nothing to do
+        // if we have a running task then everything is already in motion and there's nothing to do
         if (_runningTaskCompletionSource is not null)
             return;
 
-        //int counter = 0;
+        ///int counter = 0;
 
         // run the loop while we have a queued request.
         while (_queuedTaskCompletionSource is not null)
         {
-            //Debug.WriteLine($"In the Do Loop");
+            ///Debug.WriteLine($"In the Do Loop");
 
             // assign the queued task reference to the running task  
             _runningTaskCompletionSource = _queuedTaskCompletionSource;
             // And release the reference
             _queuedTaskCompletionSource = null;
 
-            // do our backoff
-            await Task.Delay(_backOff);
+            // start backoff task
+            var backoffTask = Task.Delay(_backOff);
 
-            // run the task
-            await _taskToRun.Invoke();
+            // start main task
+            var mainTask = _taskToRun.Invoke();
 
-            // Set the running taks as complete
+            // await both ensures we run the backoff period or greater
+            await Task.WhenAll( new Task[] { mainTask, backoffTask } );
+
+            // Set the running task completion as complete
             _runningTaskCompletionSource?.SetResult(true);
 
-            // and release the reference to the running task;
+            // and release our reference to the running task completion
+            // The originator will still hold a reference and can act on it's completion
             _runningTaskCompletionSource = null;
 
-            //Debug.WriteLine($"Completed Do loop {counter}");
-            //counter++;
+            ///Debug.WriteLine($"Completed Do loop {counter}");
+            ///counter++;
 
             // back to the top to check if another task has been queued
         }
-        //Debug.WriteLine($"Exited Do loop");
+        Debug.WriteLine($"Exited Do loop");
 
         return;
     }
 
     public Task<bool> QueueAsync()
     {
-        // check if we already have a queued queued task.
-        // If so set it as completed, false = not run 
-        if (_queuedTaskCompletionSource is not null)
-            _queuedTaskCompletionSource?.SetResult(false);
+        var oldCompletionTask = _queuedTaskCompletionSource;
 
         // Create a new completion task
         var newCompletionTask = new TaskCompletionSource<bool>();
@@ -68,9 +70,17 @@ public class InputThrottler
         // get the actual task before we assign it to the queue
         var task = newCompletionTask.Task;
 
-        // add a new task to the queue
-        // note that this releases the old one
+        // replace _queuedTaskCompletionSource
         _queuedTaskCompletionSource = newCompletionTask;
+
+        // check if we already have a queued queued task.
+        // If so set it as completed, false = not run 
+        if (oldCompletionTask is not null)
+        {
+            oldCompletionTask?.TrySetResult(false);
+            ///Debug.WriteLine($"Queued Completion Task discarded");
+        }
+
 
         // if we don't have a running task or the task is complete , then there's no process running the queue
         // So we need to call it and assign it to `runningTask`
@@ -94,5 +104,5 @@ public class InputThrottler
     /// <param name="backOff">Back off period in millisecs</param>
     /// <returns></returns>
     public static InputThrottler Create(Func<Task> toRun, int backOff)
-            => new InputThrottler(toRun, backOff > 250 ? backOff : 250);
+            => new InputThrottler(toRun, backOff > 300 ? backOff : 300);
 }

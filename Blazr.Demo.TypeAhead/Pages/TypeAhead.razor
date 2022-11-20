@@ -19,7 +19,7 @@
     private IEnumerable<string> Items = Enumerable.Empty<string>();
 
     public TypeAhead()
-        => inputThrottler = InputThrottler.Create(GetFilteredItems, 1);
+        => inputThrottler = InputThrottler.Create(GetFilteredItems, 300);
 
     protected override Task OnInitializedAsync()
     {
