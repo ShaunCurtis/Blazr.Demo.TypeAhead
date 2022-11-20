@@ -1,7 +1,8 @@
+global using System.Diagnostics;
+
 using Blazr.Demo.TypeAhead;
 using Blazr.Demo.TypeAhead.Data;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 

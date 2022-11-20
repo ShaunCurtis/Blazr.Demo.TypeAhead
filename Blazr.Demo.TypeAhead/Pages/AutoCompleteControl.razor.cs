@@ -4,10 +4,6 @@
 /// If you use it, donate something to a charity somewhere
 /// ============================================================
 
-namespace Blazr.Demo.TypeAhead;
+namespace Blazr.Demo.TypeAhead.Pages;
 
-public sealed record Continent
-{
-    public Guid Uid { get; init; } = Guid.NewGuid();
-    public required string Name { get; init; }
-}
+public sealed partial class AutoCompleteControl  {}

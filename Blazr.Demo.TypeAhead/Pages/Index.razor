@@ -1,53 +1,19 @@
 ﻿@page "/"
+@page "/Index"
 @inject CountryService Service
 
 <PageTitle>Index</PageTitle>
 
-<input class="form-control mb-3" type="search" @bind=this.searchValue list="countrylist" @oninput=this.OnSearchUpdated />
-
-<datalist id="countrylist">
-    @foreach (var country in filteredCountries)
-    {
-        <option>@country.Name</option>
-    }
-</datalist>
-
-<TypeAhead FilterItems=this.GetItems @bind-Value=this.typeAheadText />
+<AutoCompleteControl FilterItems=this.GetItems @bind-Value=this.typeAheadText />
 
 <div class="alert alert-info">
     typeAheadText : @typeAheadText
 </div>
 
 @code {
-    private string? searchValue;
-    private Guid continentUid = Guid.Empty;
-    private InputThrottler inputThrottler;
-    private string? filterText;
+    private string? typeAheadText;
 
     private IEnumerable<Country> filteredCountries = Enumerable.Empty<Country>();
-
-    public Index()
-        => inputThrottler = InputThrottler.Create(GetCountries, 1);
-
-    protected override void OnInitialized()
-    {
-        this.filteredCountries = this.Service.Countries;
-    }
-
-    private async Task GetCountries()
-    {
-        this.filteredCountries = await this.Service.FilteredCountries(filterText, this.continentUid);
-    }
-
-    private async void OnSearchUpdated(ChangeEventArgs e)
-    {
-        this.filterText = e.Value?.ToString() ?? string.Empty;
-        if (await inputThrottler.QueueAsync())
-            StateHasChanged();
-    }
-
-    private string? typeAheadText;
-    private IEnumerable<string> items = Enumerable.Empty<string>();
 
     private async Task<IEnumerable<string>> GetItems(string search)
     {

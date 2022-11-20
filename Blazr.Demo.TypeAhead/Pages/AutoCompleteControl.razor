@@ -1,0 +1,60 @@
+﻿@*
+/// ============================================================
+/// Author: Shaun Curtis, Cold Elm Coders
+/// License: Use And Donate
+/// If you use it, donate something to a charity somewhere
+/// ============================================================
+*@
+
+@implements IHandleEvent
+@implements IHandleAfterRender
+
+<input class="@CssClass" type="search" value="@this.Value" @onchange=this.OnChange list="@listid" @oninput=this.OnSearchUpdated />
+
+<datalist id="@listid">
+    @foreach (var item in this.Items)
+    {
+        <option>@item</option>
+    }
+</datalist>
+
+@code {
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+    [Parameter, EditorRequired] public Func<string?, Task<IEnumerable<string>>>? FilterItems { get; set; }
+    [Parameter] public string CssClass { get; set; } = "form-control mb-3";
+
+    private InputThrottler inputThrottler;
+    private string? filterText;
+    private string listid = Guid.NewGuid().ToString();
+    private IEnumerable<string> Items = Enumerable.Empty<string>();
+
+    public AutoCompleteControl()
+        => inputThrottler = InputThrottler.Create(GetFilteredItems, 300);
+
+    protected override Task OnInitializedAsync()
+        => GetFilteredItems();
+
+    private async Task GetFilteredItems()
+    {
+        this.Items = FilterItems is null
+            ? Enumerable.Empty<string>()
+            : await FilterItems.Invoke(filterText);
+    }
+
+    private Task OnChange(ChangeEventArgs e)
+        => this.ValueChanged.InvokeAsync(e.Value?.ToString());
+
+    private async void OnSearchUpdated(ChangeEventArgs e)
+    {
+        this.filterText = e.Value?.ToString() ?? string.Empty;
+        if (await inputThrottler.QueueAsync())
+            StateHasChanged();
+    }
+
+    Task IHandleEvent.HandleEventAsync(EventCallbackWorkItem callback, object? arg)
+        => callback.InvokeAsync(arg);
+
+    Task IHandleAfterRender.OnAfterRenderAsync()
+        => Task.CompletedTask;
+}

@@ -1,6 +1,12 @@
-﻿namespace Blazr.Demo.TypeAhead;
+﻿/// ============================================================
+/// Author: Shaun Curtis, Cold Elm Coders
+/// License: Use And Donate
+/// If you use it, donate something to a charity somewhere
+/// ============================================================
 
-public class CountryService
+namespace Blazr.Demo.TypeAhead;
+
+public sealed class CountryService
 {
     private readonly HttpClient _httpClient;
     private List<CountryData> _baseDataSet = new List<CountryData>();
@@ -23,6 +29,8 @@ public class CountryService
 
     private async ValueTask GetBaseData()
     {
+        // source country file is https://github.com/samayo/country-json/blob/master/src/country-by-continent.json
+        // on my site it's in wwwroot/sample-data/countries.json
         _baseDataSet = await _httpClient.GetFromJsonAsync<List<CountryData>>("sample-data/countries.json") ?? new List<CountryData>();
         var distinctContinentNames = _baseDataSet.Select(item => item.Continent).Distinct().ToList();
 

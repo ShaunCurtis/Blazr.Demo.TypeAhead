@@ -1,4 +1,8 @@
-﻿using System.Diagnostics;
+﻿/// ============================================================
+/// Author: Shaun Curtis, Cold Elm Coders
+/// License: Use And Donate
+/// If you use it, donate something to a charity somewhere
+/// ============================================================
 
 namespace Blazr.Demo.TypeAhead;
 
@@ -6,20 +10,20 @@ public class InputThrottler
 {
     private int _backOff = 0;
     private Func<Task> _taskToRun;
-    private Task _runningTask = Task.CompletedTask;
+    private Task _activeTask = Task.CompletedTask;
     private TaskCompletionSource<bool>? _queuedTaskCompletionSource;
-    private TaskCompletionSource<bool>? _runningTaskCompletionSource;
+    private TaskCompletionSource<bool>? _activeTaskCompletionSource;
 
     private async Task RunQueueAsync()
     {
         ///Debug.WriteLine($"Running RunQueueAsync");
 
         // if we have a completed task then null it
-        if (_runningTaskCompletionSource is not null && _runningTaskCompletionSource.Task.IsCompleted)
-            _runningTaskCompletionSource = null;
+        if (_activeTaskCompletionSource is not null && _activeTaskCompletionSource.Task.IsCompleted)
+            _activeTaskCompletionSource = null;
 
         // if we have a running task then everything is already in motion and there's nothing to do
-        if (_runningTaskCompletionSource is not null)
+        if (_activeTaskCompletionSource is not null)
             return;
 
         ///int counter = 0;
@@ -30,7 +34,7 @@ public class InputThrottler
             ///Debug.WriteLine($"In the Do Loop");
 
             // assign the queued task reference to the running task  
-            _runningTaskCompletionSource = _queuedTaskCompletionSource;
+            _activeTaskCompletionSource = _queuedTaskCompletionSource;
             // And release the reference
             _queuedTaskCompletionSource = null;
 
@@ -44,11 +48,11 @@ public class InputThrottler
             await Task.WhenAll( new Task[] { mainTask, backoffTask } );
 
             // Set the running task completion as complete
-            _runningTaskCompletionSource?.SetResult(true);
+            _activeTaskCompletionSource.TrySetResult(true);
 
             // and release our reference to the running task completion
             // The originator will still hold a reference and can act on it's completion
-            _runningTaskCompletionSource = null;
+            _activeTaskCompletionSource = null;
 
             ///Debug.WriteLine($"Completed Do loop {counter}");
             ///counter++;
@@ -84,8 +88,8 @@ public class InputThrottler
 
         // if we don't have a running task or the task is complete , then there's no process running the queue
         // So we need to call it and assign it to `runningTask`
-        if (_runningTask is null || _runningTask.IsCompleted)
-            _runningTask = this.RunQueueAsync();
+        if (_activeTask is null || _activeTask.IsCompleted)
+            _activeTask = this.RunQueueAsync();
 
         // return the reference to the task we queued
         return task;
