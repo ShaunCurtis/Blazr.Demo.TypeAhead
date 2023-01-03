@@ -1,23 +1,10 @@
-﻿@page "/"
-@page "/Index"
-@inject CountryService Service
+﻿@page "/Index"
+@inject IndexPresenter Presenter
 
 <PageTitle>Index</PageTitle>
 
-<AutoCompleteControl FilterItems=this.GetItems @bind-Value=this.typeAheadText />
+<AutoCompleteControl FilterItems=this.Presenter.GetItems @bind-Value=this.Presenter.TypeAheadText />
 
 <div class="alert alert-info">
-    typeAheadText : @typeAheadText
+    TypeAheadText : @this.Presenter.TypeAheadText
 </div>
-
-@code {
-    private string? typeAheadText;
-
-    private IEnumerable<Country> filteredCountries = Enumerable.Empty<Country>();
-
-    private async Task<IEnumerable<string>> GetItems(string search)
-    {
-        var list = await this.Service.FilteredCountries(search, null);
-        return list.Select(item => item.Name).AsEnumerable();
-    }
-}

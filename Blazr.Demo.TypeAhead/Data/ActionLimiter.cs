@@ -6,9 +6,9 @@
 
 namespace Blazr.Demo.TypeAhead;
 
-public class InputThrottler
+public sealed class ActionLimiter
 {
-    private int _backOff = 0;
+    private int _backOffPeriod = 0;
     private Func<Task> _taskToRun;
     private Task _activeTask = Task.CompletedTask;
     private TaskCompletionSource<bool>? _queuedTaskCompletionSource;
@@ -39,7 +39,7 @@ public class InputThrottler
             _queuedTaskCompletionSource = null;
 
             // start backoff task
-            var backoffTask = Task.Delay(_backOff);
+            var backoffTask = Task.Delay(_backOffPeriod);
 
             // start main task
             var mainTask = _taskToRun.Invoke();
@@ -95,9 +95,9 @@ public class InputThrottler
         return task;
     }
 
-    private InputThrottler(Func<Task> toRun, int backOff)
+    private ActionLimiter(Func<Task> toRun, int backOffPeriod)
     {
-        _backOff = backOff;
+        _backOffPeriod = backOffPeriod;
         _taskToRun = toRun;
     }
 
@@ -107,6 +107,6 @@ public class InputThrottler
     /// <param name="toRun">method to run to update the component</param>
     /// <param name="backOff">Back off period in millisecs</param>
     /// <returns></returns>
-    public static InputThrottler Create(Func<Task> toRun, int backOff)
-            => new InputThrottler(toRun, backOff > 300 ? backOff : 300);
+    public static ActionLimiter Create(Func<Task> toRun, int backOffPeriod)
+            => new ActionLimiter(toRun, backOffPeriod > 300 ? backOffPeriod : 300);
 }

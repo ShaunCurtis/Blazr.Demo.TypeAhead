@@ -1,0 +1,56 @@
+﻿@page "/"
+@page "/Country"
+@inject CountryPresenter Presenter
+
+<PageTitle>Country Cascading Select</PageTitle>
+
+<div class="mb-3">
+    <label class="form-label">Continent</label>
+    <select class="form-select" @onchange=OnContinentChanged>
+        @this.ContinentOptions()
+    </select>
+</div>
+
+<div class="mb-3">
+    <label class="form-label">Country</label>
+    <select class="form-select" disabled="@this.Presenter.IsCountryDisabled" @bind=this.Presenter.SelectedCountryUid>
+        @this.CountryOptions()
+    </select>
+</div>
+
+@code {
+    private RenderFragment ShowChoose(Guid value) => (__builder) =>
+    {
+        if (value == Guid.Empty)
+        {
+            <option value="@Guid.Empty" disabled selected>Choose...</option>
+        }
+    };
+
+    private RenderFragment ContinentOptions() => (__builder) =>
+     {
+         @this.ShowChoose(this.Presenter.SelectedContinentUid)
+
+         foreach (var continent in this.Presenter.Continents)
+         {
+             if (continent.Uid == this.Presenter.SelectedContinentUid)
+             {
+                 <option selected value="@continent.Uid">@continent.Name</option>
+             }
+             else
+             {
+                 <option value="@continent.Uid">@continent.Name</option>
+             }
+         }
+     };
+
+    private RenderFragment CountryOptions() => (__builder) =>
+     {
+         @this.ShowChoose(this.Presenter.SelectedCountryUid)
+
+         foreach (var country in this.Presenter.FilteredCountries)
+         {
+             <option value="@country.Uid">@country.Name</option>
+         }
+     };
+}

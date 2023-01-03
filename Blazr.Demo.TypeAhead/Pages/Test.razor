@@ -1,5 +1,5 @@
 ﻿@page "/Test"
-@inject CountryService Service
+@inject CountryDataBroker Service
 
 <PageTitle>Test</PageTitle>
 
@@ -18,13 +18,13 @@
 
 @code {
     private string? searchValue;
-    private InputThrottler inputThrottler;
+    private ActionLimiter inputThrottler;
     private string? filterText;
 
     private IEnumerable<Country> filteredCountries = Enumerable.Empty<Country>();
 
     public Test()
-        => inputThrottler = InputThrottler.Create(GetCountries, 300);
+        => inputThrottler = ActionLimiter.Create(GetCountries, 300);
 
     protected override void OnInitialized()
         => this.filteredCountries = this.Service.Countries;

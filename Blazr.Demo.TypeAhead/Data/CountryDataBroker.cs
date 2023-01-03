@@ -6,11 +6,11 @@
 
 namespace Blazr.Demo.TypeAhead;
 
-public sealed class CountryService
+public sealed class CountryDataBroker
 {
     private readonly HttpClient _httpClient;
     private List<CountryData> _baseDataSet = new List<CountryData>();
-    private ValueTask _loadTask;
+    public ValueTask LoadTask { get; private set; } = ValueTask.CompletedTask;
 
     public IEnumerable<Continent> Continents => _continents;
     public IEnumerable<Country> Countries => _countries;
@@ -18,14 +18,20 @@ public sealed class CountryService
     private List<Continent> _continents = new();
     private List<Country> _countries = new();
 
-    public CountryService(HttpClient httpClient)
+    public CountryDataBroker(HttpClient httpClient)
     {
         _httpClient = httpClient;
-        _loadTask = GetBaseData();
+        this.LoadTask = GetBaseData();
     }
 
     public async ValueTask<IEnumerable<Country>> FilteredCountries(string? searchText, Guid? continentUid = null)
         => await this.GetFilteredCountries(searchText, continentUid);
+
+    public async ValueTask<IEnumerable<Country>> FilteredCountriesAsync(Guid continentUid)
+    {
+        await this.LoadTask;
+        return this.Countries.Where(item => item.ContinentUid == continentUid);
+    }
 
     private async ValueTask GetBaseData()
     {
@@ -48,8 +54,7 @@ public sealed class CountryService
 
     private async ValueTask<IEnumerable<Country>> GetFilteredCountries(string? searchText, Guid? continentUid = null)
     {
-        // Add in a yield to emulate async behaviour;
-        await Task.Delay(10);
+        await this.LoadTask;
         if (string.IsNullOrWhiteSpace(searchText))
             return continentUid is null
                 ? _countries.OrderBy(item => item.Name).AsEnumerable()

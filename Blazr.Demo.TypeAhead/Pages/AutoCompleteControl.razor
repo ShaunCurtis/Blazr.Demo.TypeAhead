@@ -24,13 +24,13 @@
     [Parameter, EditorRequired] public Func<string?, Task<IEnumerable<string>>>? FilterItems { get; set; }
     [Parameter] public string CssClass { get; set; } = "form-control mb-3";
 
-    private InputThrottler inputThrottler;
+    private ActionLimiter inputThrottler;
     private string? filterText;
     private string listid = Guid.NewGuid().ToString();
     private IEnumerable<string> Items = Enumerable.Empty<string>();
 
     public AutoCompleteControl()
-        => inputThrottler = InputThrottler.Create(GetFilteredItems, 300);
+        => inputThrottler = ActionLimiter.Create(GetFilteredItems, 300);
 
     protected override Task OnInitializedAsync()
         => GetFilteredItems();
