@@ -3,7 +3,6 @@
 /// License: Use And Donate
 /// If you use it, donate something to a charity somewhere
 /// ============================================================
-
 namespace Blazr.Demo.TypeAhead;
 
 public sealed class ActionLimiter
@@ -85,7 +84,6 @@ public sealed class ActionLimiter
             ///Debug.WriteLine($"Queued Completion Task discarded");
         }
 
-
         // if we don't have a running task or the task is complete , then there's no process running the queue
         // So we need to call it and assign it to `runningTask`
         if (_activeTask is null || _activeTask.IsCompleted)
@@ -105,7 +103,7 @@ public sealed class ActionLimiter
     /// Static method to create a new InputThrottler
     /// </summary>
     /// <param name="toRun">method to run to update the component</param>
-    /// <param name="backOff">Back off period in millisecs</param>
+    /// <param name="backOffPeriod">Back off period in millisecs</param>
     /// <returns></returns>
     public static ActionLimiter Create(Func<Task> toRun, int backOffPeriod)
             => new ActionLimiter(toRun, backOffPeriod > 300 ? backOffPeriod : 300);

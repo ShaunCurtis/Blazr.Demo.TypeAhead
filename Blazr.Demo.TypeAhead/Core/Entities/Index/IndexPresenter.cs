@@ -2,10 +2,9 @@
 
 public class IndexPresenter
 {
-    private CountryDataBroker _dataBroker;
-    public ValueTask LoadTask => _dataBroker.LoadTask;
+    private ICountryDataBroker _dataBroker;
 
-    public IndexPresenter(CountryDataBroker countryService)
+    public IndexPresenter(ICountryDataBroker countryService)
         => _dataBroker = countryService;
 
     public string? TypeAheadText;

@@ -7,14 +7,14 @@
 <div class="mb-3">
     <label class="form-label">Continent</label>
     <select class="form-select" @onchange=OnContinentChanged>
-        @this.ContinentOptions()
+        @this.ContinentOptions
     </select>
 </div>
 
 <div class="mb-3">
     <label class="form-label">Country</label>
     <select class="form-select" disabled="@this.Presenter.IsCountryDisabled" @bind=this.Presenter.SelectedCountryUid>
-        @this.CountryOptions()
+        @this.CountryOptions
     </select>
 </div>
 
@@ -27,7 +27,7 @@
         }
     };
 
-    private RenderFragment ContinentOptions() => (__builder) =>
+    private RenderFragment ContinentOptions => (__builder) =>
      {
          @this.ShowChoose(this.Presenter.SelectedContinentUid)
 
@@ -44,7 +44,7 @@
          }
      };
 
-    private RenderFragment CountryOptions() => (__builder) =>
+    private RenderFragment CountryOptions => (__builder) =>
      {
          @this.ShowChoose(this.Presenter.SelectedCountryUid)
 

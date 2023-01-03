@@ -2,17 +2,23 @@
 
 public class CountryPresenter
 {
-    private CountryDataBroker _dataBroker;
+    private ICountryDataBroker _dataBroker;
     public IEnumerable<Country> FilteredCountries { get; private set; } = Enumerable.Empty<Country>();
+    public IEnumerable<Continent> Continents { get; private set; } = Enumerable.Empty<Continent>();
     public Guid SelectedCountryUid { get; set; }
     public Guid SelectedContinentUid { get; set; }
     public bool IsCountryDisabled => SelectedContinentUid == Guid.Empty;
-    public ValueTask LoadTask => _dataBroker.LoadTask;
 
-    public CountryPresenter(CountryDataBroker countryService)
-        => _dataBroker = countryService;
+    public ValueTask LoadTask = ValueTask.CompletedTask;
 
-    public IEnumerable<Continent> Continents => _dataBroker.Continents;
+    public CountryPresenter(ICountryDataBroker countryService)
+    { 
+        _dataBroker = countryService;
+        LoadTask = this.LoadData();
+    }
+
+    private async ValueTask LoadData()
+        => this.Continents = await _dataBroker.GetContinentsAsync();
 
     public async Task<bool> UpdateCountryListAsync(object? id)
     {

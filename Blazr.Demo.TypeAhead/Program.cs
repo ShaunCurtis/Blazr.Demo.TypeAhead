@@ -10,8 +10,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSingleton<WeatherForecastService>();
-builder.Services.AddScoped<CountryDataBroker>();
+builder.Services.AddScoped<CountryDataProvider>();
+builder.Services.AddScoped<ICountryDataBroker, CountryDataBroker>();
 builder.Services.AddTransient<CountryPresenter>();
+builder.Services.AddTransient<IndexPresenter>();
 {
     var services = builder.Services;
 

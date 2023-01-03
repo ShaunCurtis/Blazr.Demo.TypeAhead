@@ -6,22 +6,31 @@
 
 namespace Blazr.Demo.TypeAhead;
 
-public sealed class CountryDataBroker
+public sealed class CountryDataProvider
 {
     private readonly HttpClient _httpClient;
     private List<CountryData> _baseDataSet = new List<CountryData>();
     public ValueTask LoadTask { get; private set; } = ValueTask.CompletedTask;
 
-    public IEnumerable<Continent> Continents => _continents;
-    public IEnumerable<Country> Countries => _countries;
-
     private List<Continent> _continents = new();
     private List<Country> _countries = new();
 
-    public CountryDataBroker(HttpClient httpClient)
+    public CountryDataProvider(HttpClient httpClient)
     {
         _httpClient = httpClient;
         this.LoadTask = GetBaseData();
+    }
+
+    public async ValueTask<IEnumerable<Country>> GetCountriesAsync()
+    {
+        await this.LoadTask;
+        return _countries.AsEnumerable();
+    }
+
+    public async ValueTask<IEnumerable<Continent>> GetContinentsAsync()
+    {
+        await this.LoadTask;
+        return _continents.AsEnumerable();
     }
 
     public async ValueTask<IEnumerable<Country>> FilteredCountries(string? searchText, Guid? continentUid = null)
@@ -30,7 +39,7 @@ public sealed class CountryDataBroker
     public async ValueTask<IEnumerable<Country>> FilteredCountriesAsync(Guid continentUid)
     {
         await this.LoadTask;
-        return this.Countries.Where(item => item.ContinentUid == continentUid);
+        return _countries.Where(item => item.ContinentUid == continentUid);
     }
 
     private async ValueTask GetBaseData()
@@ -70,5 +79,4 @@ public sealed class CountryDataBroker
         public required string Country { get; init; }
         public required string Continent { get; init; }
     }
-
 }
