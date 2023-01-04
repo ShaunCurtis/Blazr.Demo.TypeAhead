@@ -1,11 +1,14 @@
-﻿/// ============================================================
-/// Author: Shaun Curtis, Cold Elm Coders
-/// License: Use And Donate
-/// If you use it, donate something to a charity somewhere
-/// ============================================================
+# The Data Pipeline for the Solution
 
-namespace Blazr.Demo.TypeAhead;
+The *Data Pipeline* for these articles.  It may appear a little complex, but it's based on *Clean Design*. 
 
+### CountryDataProvider
+
+`CountryDataProvider` gets the data from the API and maps it into application data objects.  It's an infrastructure domain object.
+
+The provider gets the data from the API when it loads.  As this is an async operation it uses `LoadTask` to hold the executing background API load code and awaits it's completion on any data requests.
+
+```csharp
 public sealed class CountryDataProvider
 {
     private readonly HttpClient _httpClient;
@@ -80,3 +83,74 @@ public sealed class CountryDataProvider
         public required string Continent { get; init; }
     }
 }
+```
+
+### CountryDataBroker
+
+An interface and an implementation that uses the `CountryDataProvider`.
+
+```csharp
+public interface ICountryDataBroker
+{
+    public ValueTask<IEnumerable<Country>> GetCountriesAsync();
+    public ValueTask<IEnumerable<Continent>> GetContinentsAsync();
+    public ValueTask<IEnumerable<Country>> FilteredCountries(string? searchText, Guid? continentUid = null);
+    public ValueTask<IEnumerable<Country>> FilteredCountriesAsync(Guid continentUid);
+}
+```
+
+```csharp
+public sealed class CountryDataBroker : ICountryDataBroker
+{
+    private CountryDataProvider _countryDataProvider;
+
+    public CountryDataBroker(CountryDataProvider countryDataProvider)
+        => _countryDataProvider = countryDataProvider;
+
+    public async ValueTask<IEnumerable<Country>> GetCountriesAsync()
+        => await _countryDataProvider.GetCountriesAsync();
+
+    public async ValueTask<IEnumerable<Continent>> GetContinentsAsync()
+        => await _countryDataProvider.GetContinentsAsync();
+
+    public async ValueTask<IEnumerable<Country>> FilteredCountries(string? searchText, Guid? continentUid = null)
+        => await _countryDataProvider.FilteredCountries(searchText, continentUid);
+
+    public async ValueTask<IEnumerable<Country>> FilteredCountriesAsync(Guid continentUid)
+        => await _countryDataProvider.FilteredCountriesAsync(continentUid);
+}
+```
+
+```csharp
+public sealed record Country
+{
+    public Guid Uid { get; init; } = Guid.NewGuid();
+    public required Guid ContinentUid { get; init; }
+    public required string Name { get; init; }
+}
+```
+```csharp
+public sealed record Continent
+{
+    public Guid Uid { get; init; } = Guid.NewGuid();
+    public required string Name { get; init; }
+}
+```
+
+Services Registration.  This is for Blazor Server.
+
+```csharp
+// Add services to the container.
+builder.Services.AddScoped<CountryDataProvider>();
+builder.Services.AddScoped<ICountryDataBroker, CountryDataBroker>();
+builder.Services.AddTransient<CountryPresenter>();
+builder.Services.AddTransient<IndexPresenter>();
+if (!builder.Services.Any(x => x.ServiceType == typeof(HttpClient)))
+{
+    builder.Services.AddScoped<HttpClient>(s =>
+    {
+        var uriHelper = s.GetRequiredService<NavigationManager>();
+        return new HttpClient { BaseAddress = new Uri(uriHelper.BaseUri) };
+    });
+}
+```

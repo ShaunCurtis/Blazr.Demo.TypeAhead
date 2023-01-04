@@ -9,7 +9,7 @@ public class CountryPresenter
     public Guid SelectedContinentUid { get; set; }
     public bool IsCountryDisabled => SelectedContinentUid == Guid.Empty;
 
-    public ValueTask LoadTask = ValueTask.CompletedTask;
+    public Task LoadTask = Task.CompletedTask;
 
     public CountryPresenter(ICountryDataBroker countryService)
     { 
@@ -17,10 +17,10 @@ public class CountryPresenter
         LoadTask = this.LoadData();
     }
 
-    private async ValueTask LoadData()
+    private async Task LoadData()
         => this.Continents = await _dataBroker.GetContinentsAsync();
 
-    public async Task<bool> UpdateCountryListAsync(object? id)
+    public async ValueTask<bool> UpdateCountryListAsync(object? id)
     {
         if (Guid.TryParse(id?.ToString() ?? string.Empty, out Guid value))
         {

@@ -100,7 +100,7 @@ public sealed class ActionLimiter
     }
 
     /// <summary>
-    /// Static method to create a new InputThrottler
+    /// Static method to create a new deBouncer
     /// </summary>
     /// <param name="toRun">method to run to update the component</param>
     /// <param name="backOffPeriod">Back off period in millisecs</param>

@@ -2,46 +2,34 @@
 
 This article demonstrates how to build a cascading Select control.
 
-## Repos
+## CountryPresenter
 
-The repo for this article is here: [Blazr.Demo.TypeAhead](https://github.com/ShaunCurtis/Blazr.Demo.TypeAhead)
+`CountryPresenter` is the presentation layer object that manages the data used by the UI Page.  It's a `Transient` registered service.
 
-## Coding Conventions
-
-1. `Nullable` is enabled globally.  Null error handling relies on it.
-2. Net7.0.
-3. C# 10.
-4. Data objects are immutable: records.
-5. `sealed` by default.
-
-## Structure
-
-The code is structured using Clean Design principles.
-
-## Data
-
-The demonstration data for this article is a Continent/Country data set. The source code file is [https://github.com/samayo/country-json/blob/master/src/country-by-continent.json](https://github.com/samayo/country-json/blob/master/src/country-by-continent.json).
-
-The CountryService and data classes are detailed in the Appendix.
-
-The data used by the UI is managed by a presenter servicve in the application layer.  This is a Transient Service that injects the `CountryService` data provider and holds the data fields and collections.
+It accesses the data pipeline through the injected `ICountryDataBroker` service.  As the data loading operation is async it provides `LoadTask` for the UI to wait on.
 
 ```csharp
 public class CountryPresenter
 {
-    private CountryDataBroker _dataBroker;
+    private ICountryDataBroker _dataBroker;
     public IEnumerable<Country> FilteredCountries { get; private set; } = Enumerable.Empty<Country>();
+    public IEnumerable<Continent> Continents { get; private set; } = Enumerable.Empty<Continent>();
     public Guid SelectedCountryUid { get; set; }
     public Guid SelectedContinentUid { get; set; }
     public bool IsCountryDisabled => SelectedContinentUid == Guid.Empty;
-    public ValueTask LoadTask => _dataBroker.LoadTask;
 
-    public CountryPresenter(CountryDataBroker countryService)
-        => _dataBroker = countryService;
+    public Task LoadTask = Task.CompletedTask;
 
-    public IEnumerable<Continent> Continents => _dataBroker.Continents;
+    public CountryPresenter(ICountryDataBroker countryService)
+    { 
+        _dataBroker = countryService;
+        LoadTask = this.LoadData();
+    }
 
-    public async Task<bool> UpdateCountryListAsync(object? id)
+    private async Task LoadData()
+        => this.Continents = await _dataBroker.GetContinentsAsync();
+
+    public async ValueTask<bool> UpdateCountryListAsync(object? id)
     {
         if (Guid.TryParse(id?.ToString() ?? string.Empty, out Guid value))
         {

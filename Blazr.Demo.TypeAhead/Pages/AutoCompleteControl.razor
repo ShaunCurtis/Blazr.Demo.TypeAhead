@@ -24,13 +24,13 @@
     [Parameter, EditorRequired] public Func<string?, Task<IEnumerable<string>>>? FilterItems { get; set; }
     [Parameter] public string CssClass { get; set; } = "form-control mb-3";
 
-    private ActionLimiter inputThrottler;
+    private ActionLimiter deBouncer;
     private string? filterText;
     private string listid = Guid.NewGuid().ToString();
     private IEnumerable<string> Items = Enumerable.Empty<string>();
 
     public AutoCompleteControl()
-        => inputThrottler = ActionLimiter.Create(GetFilteredItems, 300);
+        => deBouncer = ActionLimiter.Create(GetFilteredItems, 300);
 
     protected override Task OnInitializedAsync()
         => GetFilteredItems();
@@ -48,7 +48,7 @@
     private async void OnSearchUpdated(ChangeEventArgs e)
     {
         this.filterText = e.Value?.ToString() ?? string.Empty;
-        if (await inputThrottler.QueueAsync())
+        if (await deBouncer.QueueAsync())
             StateHasChanged();
     }
 

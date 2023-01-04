@@ -14,24 +14,17 @@ builder.Services.AddScoped<CountryDataProvider>();
 builder.Services.AddScoped<ICountryDataBroker, CountryDataBroker>();
 builder.Services.AddTransient<CountryPresenter>();
 builder.Services.AddTransient<IndexPresenter>();
-{
-    var services = builder.Services;
 
-    // Server Side Blazor doesn't register HttpClient by default
-    // Thanks to Robin Sue - Suchiman https://github.com/Suchiman/BlazorDualMode
-    if (!services.Any(x => x.ServiceType == typeof(HttpClient)))
+if (!builder.Services.Any(x => x.ServiceType == typeof(HttpClient)))
+{
+    builder.Services.AddScoped<HttpClient>(s =>
     {
-        // Setup HttpClient for server side in a client side compatible fashion
-        services.AddScoped<HttpClient>(s =>
+        var uriHelper = s.GetRequiredService<NavigationManager>();
+        return new HttpClient
         {
-            // Creating the URI helper needs to wait until the JS Runtime is initialized, so defer it.
-            var uriHelper = s.GetRequiredService<NavigationManager>();
-            return new HttpClient
-            {
-                BaseAddress = new Uri(uriHelper.BaseUri)
-            };
-        });
-    }
+            BaseAddress = new Uri(uriHelper.BaseUri)
+        };
+    });
 }
 
 var app = builder.Build();
