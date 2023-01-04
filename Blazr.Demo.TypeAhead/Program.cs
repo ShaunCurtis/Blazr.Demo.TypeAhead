@@ -10,10 +10,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSingleton<WeatherForecastService>();
-builder.Services.AddScoped<CountryDataProvider>();
-builder.Services.AddScoped<ICountryDataBroker, CountryDataBroker>();
-builder.Services.AddTransient<CountryPresenter>();
-builder.Services.AddTransient<IndexPresenter>();
+builder.Services.AddScoped<CountryDataBroker>();
+builder.Services.AddTransient<CascadingSelectPresenter>();
+{
+    var services = builder.Services;
 
 
 if (!builder.Services.Any(x => x.ServiceType == typeof(HttpClient)))

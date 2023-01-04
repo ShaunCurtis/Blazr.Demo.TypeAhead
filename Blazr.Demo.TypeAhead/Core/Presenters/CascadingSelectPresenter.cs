@@ -1,6 +1,6 @@
 ﻿namespace Blazr.Demo.TypeAhead;
 
-public class CountryPresenter
+public class CascadingSelectPresenter
 {
     private ICountryDataBroker _dataBroker;
     public IEnumerable<Country> FilteredCountries { get; private set; } = Enumerable.Empty<Country>();
@@ -11,7 +11,7 @@ public class CountryPresenter
 
     public Task LoadTask = Task.CompletedTask;
 
-    public CountryPresenter(ICountryDataBroker countryService)
+    public CascadingSelectPresenter(ICountryDataBroker countryService)
     { 
         _dataBroker = countryService;
         LoadTask = this.LoadData();

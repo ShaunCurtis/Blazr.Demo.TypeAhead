@@ -1,3 +1,12 @@
-﻿namespace Blazr.Demo.TypeAhead.Pages;
+﻿using Microsoft.AspNetCore.Components;
 
-public sealed partial class Index {}
+namespace Blazr.Demo.TypeAhead.Pages;
+
+public sealed partial class Index 
+{
+    protected override async Task OnInitializedAsync()
+        => await this.CascadingSelectPresenter.LoadTask;
+
+    private async Task OnContinentChanged(ChangeEventArgs e)
+        => await this.CascadingSelectPresenter.UpdateCountryListAsync(e.Value);
+}

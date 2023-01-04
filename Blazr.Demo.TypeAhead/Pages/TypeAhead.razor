@@ -1,0 +1,10 @@
+﻿@page "/TypeAhead"
+@inject TypeAheadPresenter Presenter
+
+<PageTitle>Index</PageTitle>
+
+<AutoCompleteControl FilterItems=this.Presenter.GetItems @bind-Value=this.Presenter.TypeAheadText />
+
+<div class="alert alert-info">
+    TypeAheadText : @this.Presenter.TypeAheadText
+</div>
