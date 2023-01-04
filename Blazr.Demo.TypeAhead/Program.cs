@@ -20,10 +20,7 @@ if (!builder.Services.Any(x => x.ServiceType == typeof(HttpClient)))
     builder.Services.AddScoped<HttpClient>(s =>
     {
         var uriHelper = s.GetRequiredService<NavigationManager>();
-        return new HttpClient
-        {
-            BaseAddress = new Uri(uriHelper.BaseUri)
-        };
+        return new HttpClient { BaseAddress = new Uri(uriHelper.BaseUri) };
     });
 }
 
