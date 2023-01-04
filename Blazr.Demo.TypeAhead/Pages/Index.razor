@@ -1,10 +1,63 @@
-﻿@page "/Index"
-@inject IndexPresenter Presenter
+﻿@page "/"
+@inject TypeAheadPresenter TypeAheadPresenter
+@inject CascadingSelectPresenter CascadingSelectPresenter
 
 <PageTitle>Index</PageTitle>
 
-<AutoCompleteControl FilterItems=this.Presenter.GetItems @bind-Value=this.Presenter.TypeAheadText />
+<AutoCompleteControl FilterItems=this.TypeAheadPresenter.GetItems @bind-Value=this.TypeAheadPresenter.TypeAheadText />
 
 <div class="alert alert-info">
-    TypeAheadText : @this.Presenter.TypeAheadText
+    TypeAheadText : @this.TypeAheadPresenter.TypeAheadText
 </div>
+
+<div class="mb-3">
+    <label class="form-label">Continent</label>
+    <select class="form-select" @onchange=OnContinentChanged>
+        @this.ContinentOptions
+    </select>
+</div>
+
+<div class="mb-3">
+    <label class="form-label">Country</label>
+    <select class="form-select" disabled="@this.CascadingSelectPresenter.IsCountryDisabled" @bind=this.CascadingSelectPresenter.SelectedCountryUid>
+        @this.CountryOptions
+    </select>
+</div>
+
+@code {
+    private RenderFragment ShowChoose(Guid value) => (__builder) =>
+    {
+        if (value == Guid.Empty)
+        {
+            <option value="@Guid.Empty" disabled selected>Choose...</option>
+        }
+    };
+
+    private RenderFragment ContinentOptions => (__builder) =>
+     {
+         @this.ShowChoose(this.CascadingSelectPresenter.SelectedContinentUid)
+
+         foreach (var continent in this.CascadingSelectPresenter.Continents)
+         {
+             if (continent.Uid == this.CascadingSelectPresenter.SelectedContinentUid)
+             {
+                 <option selected value="@continent.Uid">@continent.Name</option>
+             }
+             else
+             {
+                 <option value="@continent.Uid">@continent.Name</option>
+             }
+         }
+     };
+
+    private RenderFragment CountryOptions => (__builder) =>
+     {
+         @this.ShowChoose(this.CascadingSelectPresenter.SelectedCountryUid)
+
+         foreach (var country in this.CascadingSelectPresenter.FilteredCountries)
+         {
+             <option value="@country.Uid">@country.Name</option>
+         }
+     };
+}
+

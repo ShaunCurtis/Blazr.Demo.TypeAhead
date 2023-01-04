@@ -1,10 +1,10 @@
 ﻿namespace Blazr.Demo.TypeAhead;
 
-public class IndexPresenter
+public class TypeAheadPresenter
 {
     private ICountryDataBroker _dataBroker;
 
-    public IndexPresenter(ICountryDataBroker countryService)
+    public TypeAheadPresenter(ICountryDataBroker countryService)
         => _dataBroker = countryService;
 
     public string? TypeAheadText;
