@@ -78,7 +78,7 @@ public sealed class ActionLimiter
 
         // check if we already have a queued queued task.
         // If so set it as completed, false = not run 
-        if (oldCompletionTask is not null)
+        if (oldCompletionTask is not null && !oldCompletionTask.Task.IsCompleted)
         {
             oldCompletionTask?.TrySetResult(false);
             ///Debug.WriteLine($"Queued Completion Task discarded");

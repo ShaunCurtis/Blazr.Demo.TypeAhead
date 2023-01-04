@@ -7,7 +7,6 @@ public class CascadingSelectPresenter
     public IEnumerable<Continent> Continents { get; private set; } = Enumerable.Empty<Continent>();
     public Guid SelectedCountryUid { get; set; }
     public Guid SelectedContinentUid { get; set; }
-    public bool IsCountryDisabled => SelectedContinentUid == Guid.Empty;
 
     public Task LoadTask = Task.CompletedTask;
 

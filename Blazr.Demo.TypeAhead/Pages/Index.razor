@@ -19,7 +19,7 @@
 
 <div class="mb-3">
     <label class="form-label">Country</label>
-    <select class="form-select" disabled="@this.CascadingSelectPresenter.IsCountryDisabled" @bind=this.CascadingSelectPresenter.SelectedCountryUid>
+    <select class="form-select" disabled="@_isCountryDisabled" @bind=this.CascadingSelectPresenter.SelectedCountryUid>
         @this.CountryOptions
     </select>
 </div>

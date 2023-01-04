@@ -1,26 +1,27 @@
 # Building a Blazor Cascading Select Control
 
-This article demonstrates how to build a cascading Select control.
+This article demonstrates how to build a cascading select control.
 
-## CountryPresenter
+The data pipeline is describing on detail in this article [Data Pipeline](./Data-Pipeline.md).
 
-`CountryPresenter` is the presentation layer object that manages the data used by the UI Page.  It's a `Transient` registered service.
+## CascadingSelectPresenter
 
-It accesses the data pipeline through the injected `ICountryDataBroker` service.  As the data loading operation is async it provides `LoadTask` for the UI to wait on.
+`CascadingSelectPresenter` is the presentation layer object that manages the data used by the UI Page.  It's a `Transient` registered service.
+
+It accesses the data pipeline through the injected `ICountryDataBroker` service.  The data loading operation is async, so it provides `LoadTask` for the UI to `await`.
 
 ```csharp
-public class CountryPresenter
+public class CascadingSelectPresenter
 {
     private ICountryDataBroker _dataBroker;
     public IEnumerable<Country> FilteredCountries { get; private set; } = Enumerable.Empty<Country>();
     public IEnumerable<Continent> Continents { get; private set; } = Enumerable.Empty<Continent>();
     public Guid SelectedCountryUid { get; set; }
     public Guid SelectedContinentUid { get; set; }
-    public bool IsCountryDisabled => SelectedContinentUid == Guid.Empty;
 
     public Task LoadTask = Task.CompletedTask;
 
-    public CountryPresenter(ICountryDataBroker countryService)
+    public CascadingSelectPresenter(ICountryDataBroker countryService)
     { 
         _dataBroker = countryService;
         LoadTask = this.LoadData();
@@ -44,24 +45,27 @@ public class CountryPresenter
 }
 ```
 
-The main markup block sets out two `select` html controls.  The root control implements manual control, the secodary control implements binding. `@this.ContinentOptions()` and `@this.CountryOptions()` are separate render fragments to keep our main block clean and concise.
+### Demo Page
+
+The main markup block sets out two `select` html controls.  The root control is manually wired, the secondary control implements binding. `@this.ContinentOptions()` and `@this.CountryOptions()` are separate render fragments to keep our main block clean and concise.
 
 ```csharp
-@inject CountryPresenter Presenter
+@page "/CascadingSelect"
+@inject CascadingSelectPresenter Presenter
 
 <PageTitle>Country Cascading Select</PageTitle>
 
 <div class="mb-3">
     <label class="form-label">Continent</label>
     <select class="form-select" @onchange=OnContinentChanged>
-        @this.ContinentOptions()
+        @this.ContinentOptions
     </select>
 </div>
 
 <div class="mb-3">
     <label class="form-label">Country</label>
-    <select class="form-select" disabled="@this.Presenter.IsCountryDisabled" @bind=this.Presenter.SelectedCountryUid>
-        @this.CountryOptions()
+    <select class="form-select" disabled="@_isCountryDisabled" @bind=this.Presenter.SelectedCountryUid>
+        @this.CountryOptions
     </select>
 </div>
 ```
@@ -116,16 +120,18 @@ The main markup block sets out two `select` html controls.  The root control imp
 The code behind file implements the code.
 
 ```csharp
-    public sealed partial class CountryPage
-    {
-        // Waits on the service loading
-        // ensures the service data is populated before we try and render it
-        protected override async Task OnInitializedAsync()
-            => await Presenter.LoadTask;
+public sealed partial class CascadingSelect
+{
+    public bool _isCountryDisabled => this.Presenter.SelectedContinentUid == Guid.Empty;
 
-        private async Task OnContinentChanged(ChangeEventArgs e)
-            => await Presenter.UpdateCountryListAsync(e.Value);
-    }
+    // Waits on the service loading
+    // ensures the service data is populated before we try and render it
+    protected override async Task OnInitializedAsync()
+        => await Presenter.LoadTask;
+
+    private async Task OnContinentChanged(ChangeEventArgs e)
+        => await Presenter.UpdateCountryListAsync(e.Value);
+}
 ```
 
 

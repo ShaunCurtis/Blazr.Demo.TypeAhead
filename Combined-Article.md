@@ -1,4 +1,25 @@
-# Building a Blazor Autocomplete Control
+# Building Blazor Select and DataList Controls
+
+This article describes how to build two complex select controls for Blazor:
+
+1. A typeahead DataList based Input control.
+2. A cascaded Select control.
+
+They don't inherit from `InputBase` so there's no requirment to run them inside a `EditForm`.
+
+## Repos
+
+The repo for this article is here: [Blazr.Demo.TypeAhead](https://github.com/ShaunCurtis/Blazr.Demo.TypeAhead)
+
+## Coding Conventions
+
+1. `Nullable` is enabled globally.  Null error handling relies on it.
+2. Net7.0.
+3. C# 10.
+4. Data objects are immutable: records.
+5. `sealed` by default.
+
+## The AutoComplete Control
 
 Where a standard select was once the only solution, a typeahead/autocomplete control is one of those must have controls you need for a modern UX.  If you don't want to buy into a component library, you need to roll your own.  
 
@@ -19,19 +40,7 @@ We need a *De-Bouncer*.  For those unsure what I mean, we need to control the nu
 
 It works, but the time taken to update is the timer + the query/refresh period.  We can do better.
 
-## Repos
-
-The repo for this article is here: [Blazr.Demo.TypeAhead](https://github.com/ShaunCurtis/Blazr.Demo.TypeAhead)
-
-## Coding Conventions
-
-1. `Nullable` is enabled globally.  Null error handling relies on it.
-2. Net7.0.
-3. C# 10.
-4. Data objects are immutable: records.
-5. `sealed` by default.
-
-## ActionLimiter
+### ActionLimiter
 
 This is my de-bouncer.  No timer: it utilizes the built in functionality in the Async library.
 
@@ -40,37 +49,42 @@ The class outline.
 ```csharp
 public sealed class ActionLimiter
 {
+    // The public Methods
+    public Task<bool> QueueAsync();
+    public static ActionLimiter Create(Func<Task> toRun, int backOffPeriod);
+
+
     private int _backOffPeriod = 0;
     private Func<Task> _taskToRun;
     private Task _activeTask = Task.CompletedTask;
     private TaskCompletionSource<bool>? _queuedTaskCompletionSource;
     private TaskCompletionSource<bool>? _activeTaskCompletionSource;
 
-    private async Task RunQueueAsync()
-    public Task<bool> QueueAsync()
-    private ActionLimiter(Func<Task> toRun, int backOffPeriod)
-    public static ActionLimiter Create(Func<Task> toRun, int backOffPeriod)
+    private async Task RunQueueAsync();
+    private ActionLimiter(Func<Task> toRun, int backOffPeriod);
 }
 ``` 
 
-Instantiation is restricted to a static `Create` method. There's no way to just "new" up an instance.
+1. Instantiation is restricted to a static `Create` method. There's no way to just "new" up an instance.
 
-The `Func` delegate is the actual method that gets called to refresh the data.  The method pattern is `Task MethodName()`.  
+2. The `Func` delegate is the actual method that gets called to refresh the data.  The method pattern is `Task MethodName()`.  
 
-The backoff is the minimum update backoff period: the default value is set to 300 milliseconds.
+3. The backoff is the minimum update backoff period: the default value is set to 300 milliseconds.
 
-There are two private `TaskCompletionSource` global variables that track the running and queued requests.  If you haven't encountered `TaskCompletionSource` before, it's an object that provides manual creation and management of Tasks.  You'll see how it works in the code.
+4. There are two private `TaskCompletionSource` global variables that track the running and queued requests.  If you haven't encountered `TaskCompletionSource` before, it's an object that provides manual creation and management of Tasks.  You'll see how it works in the code.
 
-`_activeTask` references the `Task` for the current instance of `RunQueueAsync`.  It provides a mechanism to check if the queue is currently running or completed.
+5. `_activeTask` references the `Task` for the current instance of `RunQueueAsync`.  It provides a mechanism to check if the queue is currently running or completed.
 
 ### QueueAsync
+
+The method is `Task` based and retuens a `bool`.
 
 ```csharp
 public Task<bool> QueueAsync()
 {
 ```
 
-Get a reference to the currently queued CompletionTask.  It will be set to completed once replaced by a new CompletionTask.  It may be null. 
+Get a reference to the currently queued CompletionTask.  It may be null. 
 
 ```csharp
     var oldCompletionTask = _queuedTaskCompletionSource;
@@ -85,23 +99,22 @@ Create a new CompletionTask and get a reference to it's `Task`.  Belt-and-braces
 Switch out the CompletionTask reference assigned to the active queue.
 
 ```csharp
-    // replace _queuedTaskCompletionSource
     _queuedTaskCompletionSource = newCompletionTask;
 ```
 
-Set the old CompletionTask to completed. Return `false`: nothing happened.
+Set the old CompletionTask to completed, returning `false`: nothing happened.
  
 ```csharp
-    if (oldCompletionTask is not null)
+    if (oldCompletionTask is not null && !oldCompletionTask.Task.IsCompleted)
         oldCompletionTask?.TrySetResult(false);
 ```
 
-Is `_activeTask` not completed i.e. `RunQueueAsync` is running.  If not call `RunQueueAsync` and assign it's `Task` reference to `_activeTask`.
+Ceck if `_activeTask` is not completed i.e. `RunQueueAsync` is running.  If not, call `RunQueueAsync` and assign it's `Task` reference to `_activeTask`.
 
 ```csharp
     if (_activeTask is null || _activeTask.IsCompleted)
         _activeTask = this.RunQueueAsync();
-````
+```
 
 Return the task associated with the new queued CompletionTask.
 
@@ -110,7 +123,7 @@ Return the task associated with the new queued CompletionTask.
 }
 ```  
 
-### RunQueueAsync
+#### RunQueueAsync
 
 ```csharp
 private async Task RunQueueAsync()
@@ -166,14 +179,14 @@ Loop back to check if another request has been queued: there's been a UI event w
 }
 ```
 
-### Summary
+#### Summary
 
 The object uses `TaskCompletionSource` instances to represent each request.  It passes the Task associated with the instance of `TaskCompletionSource` back to the caller.  The queued request, represented by the `TaskCompletionSource`, is either:
 
 1. Run by the queue handler.  The task is completed as true: we did something and you probably need to update the UI.
 2. Replaced by another request.  It's completed as false: no action needed.
 
-## The AutoCompleteComponent
+### The AutoCompleteComponent
 
 It has:
 
@@ -250,7 +263,8 @@ The UI markup code:
     }
 </datalist>
 ```
-### Improving the Component Performance
+
+#### Improving the Component Performance
 
 The component raises a UI event on every keystroke: `OnSearchUpdated` is called.  As we inherit from `ComponentBase`, this triggers two render events on the component: one before and one after the await yield.  We don't need them: they do nothing unless `deBouncer.QueueAsync()` returns true.
 
@@ -278,7 +292,7 @@ Finally we add a code behind file to seal the class: sealed objects are marginal
 public sealed partial class AutoCompleteControl  {}
 ```
 
-## Demo Page
+### Demo Page
 
 The code for the data pipeline is in the appendix.  This page demonstrates autocomplete on a country select control.  It's pretty self explanatory.  Either return the whole list if search is empty as done here, or return an empty list.  
 
@@ -300,7 +314,8 @@ Code behind class to seal the component.
 ```csharp
 public sealed partial class Index {}
 ```
-## Demo Page Presenter
+
+### Demo Page Presenter
 
 `IndexPresenter` is the presentation layer object that manages the data used by the UI Page.  It's a `Transient` registered service.
 
@@ -323,10 +338,141 @@ public class IndexPresenter
     }
 }
 ```
+## The Cascading Select Control
 
-## Appendix
+### CascadingSelectPresenter
 
-The *Data Pipeline* for this article.  It may appear a little complex, but it's based on *Clean Design*. 
+`CascadingSelectPresenter` is the presentation layer object that manages the data used by the UI Page.  It's a `Transient` registered service.
+
+It accesses the data pipeline through the injected `ICountryDataBroker` service.  The data loading operation is async, so it provides `LoadTask` for the UI to `await`.
+
+```csharp
+public class CascadingSelectPresenter
+{
+    private ICountryDataBroker _dataBroker;
+    public IEnumerable<Country> FilteredCountries { get; private set; } = Enumerable.Empty<Country>();
+    public IEnumerable<Continent> Continents { get; private set; } = Enumerable.Empty<Continent>();
+    public Guid SelectedCountryUid { get; set; }
+    public Guid SelectedContinentUid { get; set; }
+
+    public Task LoadTask = Task.CompletedTask;
+
+    public CascadingSelectPresenter(ICountryDataBroker countryService)
+    { 
+        _dataBroker = countryService;
+        LoadTask = this.LoadData();
+    }
+
+    private async Task LoadData()
+        => this.Continents = await _dataBroker.GetContinentsAsync();
+
+    public async ValueTask<bool> UpdateCountryListAsync(object? id)
+    {
+        if (Guid.TryParse(id?.ToString() ?? string.Empty, out Guid value))
+        {
+            SelectedContinentUid = value;
+
+            SelectedCountryUid = Guid.Empty;
+            this.FilteredCountries = await _dataBroker.FilteredCountriesAsync(SelectedContinentUid);
+            return true;
+        }
+        return false;
+    }
+}
+```
+
+### Demo Page
+
+The main markup block sets out two `select` html controls.  The root control is manually wired, the secondary control implements binding. `@this.ContinentOptions()` and `@this.CountryOptions()` are separate render fragments to keep our main block clean and concise.
+
+```csharp
+@page "/CascadingSelect"
+@inject CascadingSelectPresenter Presenter
+
+<PageTitle>Country Cascading Select</PageTitle>
+
+<div class="mb-3">
+    <label class="form-label">Continent</label>
+    <select class="form-select" @onchange=OnContinentChanged>
+        @this.ContinentOptions
+    </select>
+</div>
+
+<div class="mb-3">
+    <label class="form-label">Country</label>
+    <select class="form-select" disabled="@_isCountryDisabled" @bind=this.Presenter.SelectedCountryUid>
+        @this.CountryOptions
+    </select>
+</div>
+```
+
+`ContinentOptions` is defined in the code section.  It's a mixed c# code and markup method.  It loops through the Continents list and marks the current value as selected (if one is selected).
+
+```csharp
+    private RenderFragment ContinentOptions() => (__builder) =>
+     {
+         @this.ShowChoose(this.Presenter.SelectedContinentUid)
+
+         foreach (var continent in this.Presenter.Continents)
+         {
+             if (continent.Uid == this.Presenter.SelectedContinentUid)
+             {
+                 <option selected value="@continent.Uid">@continent.Name</option>
+             }
+             else
+             {
+                 <option value="@continent.Uid">@continent.Name</option>
+             }
+         }
+     };
+```
+
+`CountryOptions` is simpler as it using binding.
+
+```csharp
+    private RenderFragment CountryOptions() => (__builder) =>
+     {
+         @this.ShowChoose(this.Presenter.SelectedCountryUid)
+
+         foreach (var country in this.Presenter.FilteredCountries)
+         {
+             <option value="@country.Uid">@country.Name</option>
+         }
+     };
+```
+
+`ShowChoose` adds a `Choose...` option if nothing is currently selected.  It will disappear from the select once a value is selected.
+
+```csharp
+    private RenderFragment ShowChoose(Guid value) => (__builder) =>
+    {
+        if (value == Guid.Empty)
+        {
+            <option value="@Guid.Empty" disabled selected>Choose...</option>
+        }
+    };
+```
+
+The code behind file implements the code.
+
+```csharp
+public sealed partial class CascadingSelect
+{
+    public bool _isCountryDisabled => this.Presenter.SelectedContinentUid == Guid.Empty;
+
+    // Waits on the service loading
+    // ensures the service data is populated before we try and render it
+    protected override async Task OnInitializedAsync()
+        => await Presenter.LoadTask;
+
+    private async Task OnContinentChanged(ChangeEventArgs e)
+        => await Presenter.UpdateCountryListAsync(e.Value);
+}
+```
+
+## THe Data Pipeline
+
+It's based on *Clean Design* principles. 
 
 ### CountryDataProvider
 

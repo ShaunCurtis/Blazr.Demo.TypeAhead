@@ -12,7 +12,7 @@
 
 <div class="mb-3">
     <label class="form-label">Country</label>
-    <select class="form-select" disabled="@this.Presenter.IsCountryDisabled" @bind=this.Presenter.SelectedCountryUid>
+    <select class="form-select" disabled="@_isCountryDisabled" @bind=this.Presenter.SelectedCountryUid>
         @this.CountryOptions
     </select>
 </div>

@@ -40,37 +40,42 @@ The class outline.
 ```csharp
 public sealed class ActionLimiter
 {
+    // The public Methods
+    public Task<bool> QueueAsync();
+    public static ActionLimiter Create(Func<Task> toRun, int backOffPeriod);
+
+
     private int _backOffPeriod = 0;
     private Func<Task> _taskToRun;
     private Task _activeTask = Task.CompletedTask;
     private TaskCompletionSource<bool>? _queuedTaskCompletionSource;
     private TaskCompletionSource<bool>? _activeTaskCompletionSource;
 
-    private async Task RunQueueAsync()
-    public Task<bool> QueueAsync()
-    private ActionLimiter(Func<Task> toRun, int backOffPeriod)
-    public static ActionLimiter Create(Func<Task> toRun, int backOffPeriod)
+    private async Task RunQueueAsync();
+    private ActionLimiter(Func<Task> toRun, int backOffPeriod);
 }
 ``` 
 
-Instantiation is restricted to a static `Create` method. There's no way to just "new" up an instance.
+1. Instantiation is restricted to a static `Create` method. There's no way to just "new" up an instance.
 
-The `Func` delegate is the actual method that gets called to refresh the data.  The method pattern is `Task MethodName()`.  
+2. The `Func` delegate is the actual method that gets called to refresh the data.  The method pattern is `Task MethodName()`.  
 
-The backoff is the minimum update backoff period: the default value is set to 300 milliseconds.
+3. The backoff is the minimum update backoff period: the default value is set to 300 milliseconds.
 
-There are two private `TaskCompletionSource` global variables that track the running and queued requests.  If you haven't encountered `TaskCompletionSource` before, it's an object that provides manual creation and management of Tasks.  You'll see how it works in the code.
+4. There are two private `TaskCompletionSource` global variables that track the running and queued requests.  If you haven't encountered `TaskCompletionSource` before, it's an object that provides manual creation and management of Tasks.  You'll see how it works in the code.
 
-`_activeTask` references the `Task` for the current instance of `RunQueueAsync`.  It provides a mechanism to check if the queue is currently running or completed.
+5. `_activeTask` references the `Task` for the current instance of `RunQueueAsync`.  It provides a mechanism to check if the queue is currently running or completed.
 
 ### QueueAsync
+
+The method is `Task` based and retuens a `bool`.
 
 ```csharp
 public Task<bool> QueueAsync()
 {
 ```
 
-Get a reference to the currently queued CompletionTask.  It will be set to completed once replaced by a new CompletionTask.  It may be null. 
+Get a reference to the currently queued CompletionTask.  It may be null. 
 
 ```csharp
     var oldCompletionTask = _queuedTaskCompletionSource;
@@ -85,23 +90,22 @@ Create a new CompletionTask and get a reference to it's `Task`.  Belt-and-braces
 Switch out the CompletionTask reference assigned to the active queue.
 
 ```csharp
-    // replace _queuedTaskCompletionSource
     _queuedTaskCompletionSource = newCompletionTask;
 ```
 
-Set the old CompletionTask to completed. Return `false`: nothing happened.
+Set the old CompletionTask to completed, returning `false`: nothing happened.
  
 ```csharp
-    if (oldCompletionTask is not null)
+    if (oldCompletionTask is not null && !oldCompletionTask.Task.IsCompleted)
         oldCompletionTask?.TrySetResult(false);
 ```
 
-Is `_activeTask` not completed i.e. `RunQueueAsync` is running.  If not call `RunQueueAsync` and assign it's `Task` reference to `_activeTask`.
+Ceck if `_activeTask` is not completed i.e. `RunQueueAsync` is running.  If not, call `RunQueueAsync` and assign it's `Task` reference to `_activeTask`.
 
 ```csharp
     if (_activeTask is null || _activeTask.IsCompleted)
         _activeTask = this.RunQueueAsync();
-````
+```
 
 Return the task associated with the new queued CompletionTask.
 
@@ -250,6 +254,7 @@ The UI markup code:
     }
 </datalist>
 ```
+
 ### Improving the Component Performance
 
 The component raises a UI event on every keystroke: `OnSearchUpdated` is called.  As we inherit from `ComponentBase`, this triggers two render events on the component: one before and one after the await yield.  We don't need them: they do nothing unless `deBouncer.QueueAsync()` returns true.
