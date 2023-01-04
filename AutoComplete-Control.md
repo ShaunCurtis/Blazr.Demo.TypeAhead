@@ -1,8 +1,10 @@
 # Building a Blazor Autocomplete Control
 
-Where a standard select was once the only solution, a typeahead/autocomplete control is one of those must have controls you need for a modern UX.  If you don't want to buy into a component library, you need to roll your own.  
+## Introduction
 
-This article shows you how.
+Where once a standard select was the only solution, a typeahead/autocomplete control is now one of those *must have* controls in a modern UX.  If you don't want to buy into a component library, you need to build your own.  
+
+This article shows you how and details an innovitive debouncer.
 
 Html now has the `datalist` input control which gets us most of the way there.  But you need to handle user keyboard input.  You either:
 
@@ -31,7 +33,7 @@ The repo for this article is here: [Blazr.Demo.TypeAhead](https://github.com/Sha
 4. Data objects are immutable: records.
 5. `sealed` by default.
 
-## ActionLimiter
+## The ActionLimiter
 
 This is my de-bouncer.  No timer: it utilizes the built in functionality in the Async library.
 
@@ -100,7 +102,7 @@ Set the old CompletionTask to completed, returning `false`: nothing happened.
         oldCompletionTask?.TrySetResult(false);
 ```
 
-Ceck if `_activeTask` is not completed i.e. `RunQueueAsync` is running.  If not, call `RunQueueAsync` and assign it's `Task` reference to `_activeTask`.
+Check if `_activeTask` is not completed i.e. `RunQueueAsync` is running.  If not, call `RunQueueAsync` and assign it's `Task` reference to `_activeTask`.
 
 ```csharp
     if (_activeTask is null || _activeTask.IsCompleted)

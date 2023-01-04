@@ -64,14 +64,16 @@ public sealed class CountryDataProvider
     private async ValueTask<IEnumerable<Country>> GetFilteredCountries(string? searchText, Guid? continentUid = null)
     {
         await this.LoadTask;
-        if (string.IsNullOrWhiteSpace(searchText))
-            return continentUid is null
-                ? _countries.OrderBy(item => item.Name).AsEnumerable()
-                : _countries.Where(item => item.ContinentUid == continentUid).OrderBy(item => item.Name).AsEnumerable();
 
-        return continentUid is null || continentUid == Guid.Empty
-            ? _countries.Where(item => item.Name.ToLower().Contains(searchText.ToLower())).OrderBy(item => item.Name).AsEnumerable()
-            : _countries.Where(item => item.Name.ToLower().Contains(searchText.ToLower()) && item.ContinentUid == continentUid).OrderBy(item => item.Name).AsEnumerable();
+        var query = _countries.AsEnumerable();
+
+        if (continentUid is not null && continentUid != Guid.Empty)
+            query = query.Where(item => item.ContinentUid == continentUid);
+
+        if (!string.IsNullOrWhiteSpace(searchText))
+            query = query.Where(item => item.Name.ToLower().Contains(searchText.ToLower()));
+
+        return query.OrderBy(item => item.Name);
     }
 
     private record CountryData
