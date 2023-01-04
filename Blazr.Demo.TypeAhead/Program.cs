@@ -12,8 +12,6 @@ builder.Services.AddServerSideBlazor();
 builder.Services.AddSingleton<WeatherForecastService>();
 builder.Services.AddScoped<CountryDataBroker>();
 builder.Services.AddTransient<CascadingSelectPresenter>();
-{
-    var services = builder.Services;
 
 
 if (!builder.Services.Any(x => x.ServiceType == typeof(HttpClient)))
