@@ -15,6 +15,7 @@ builder.Services.AddScoped<ICountryDataBroker, CountryDataBroker>();
 builder.Services.AddTransient<CountryPresenter>();
 builder.Services.AddTransient<IndexPresenter>();
 
+
 if (!builder.Services.Any(x => x.ServiceType == typeof(HttpClient)))
 {
     builder.Services.AddScoped<HttpClient>(s =>
